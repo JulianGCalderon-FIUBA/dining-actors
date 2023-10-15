@@ -10,5 +10,4 @@ func main() {
 
 	<-time.After(5 * time.Second)
 	chain.shutdown()
-
 }

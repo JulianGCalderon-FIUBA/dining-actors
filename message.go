@@ -3,8 +3,7 @@ package main
 type Message uint8
 
 const (
-	Start Message = iota
-	Close
+	Shutdown Message = iota
 	RightStickRequest
 	RightStickSend
 	LeftStickRequest

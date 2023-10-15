@@ -1,6 +1,9 @@
 package main
 
-import "fmt"
+import (
+	"fmt"
+	// "time"
+)
 
 type Philosopher struct {
 	id                  int
@@ -13,7 +16,9 @@ type Philosopher struct {
 	channel             chan Message
 }
 
-func newChain(size int) (philosophers []Philosopher) {
+type Chain []Philosopher
+
+func newChain(size int) (philosophers Chain) {
 	philosophers = make([]Philosopher, size)
 
 	for i := range philosophers {
@@ -40,121 +45,130 @@ func newChain(size int) (philosophers []Philosopher) {
 	return
 }
 
-func (p Philosopher) receive() {
-	for msg := range p.channel {
-		switch msg {
-		case RightStickRequest:
-			p.handleRightStickRequest()
-		case LeftStickRequest:
-			p.handleLeftStickRequest()
-		case RightStickSend:
-			p.handleRightStickSend()
-		case LeftStickSend:
-			p.handleLeftStickSend()
-		case Start:
-			p.handleStart()
-		}
+func (c Chain) close() {
+	for _, p := range c {
+		p.send(Close)
 	}
 }
 
-func (p *Philosopher) handleRightStickRequest() {
-	p.log("Was requested right stick")
-
-	if p.rightStick == Dirty {
-		p.log("Sending right stick")
-		p.rightStick = Waiting
-		p.rightPhilosopher.send(LeftStickSend)
-		p.rightPhilosopher.send(LeftStickRequest)
-	} else {
-		p.rightStickRequested = true
-	}
+func (p *Philosopher) requestRight() {
+	p.log("Requesting right stick")
+	p.rightPhilosopher.send(LeftStickRequest)
+	p.rightStick = Waiting
 }
 
-func (p *Philosopher) handleLeftStickRequest() {
-	p.log("Was requested left stick")
-
-	if p.leftStick == Dirty {
-		p.log("Sending left stick")
-		p.leftStick = Waiting
-		p.leftPhilosopher.send(RightStickSend)
-		p.leftPhilosopher.send(RightStickRequest)
-	} else {
-		p.leftStickRequested = true
-	}
+func (p *Philosopher) requestLeft() {
+	p.log("Requesting left stick")
+	p.leftPhilosopher.send(RightStickRequest)
+	p.leftStick = Waiting
 }
 
-func (p *Philosopher) handleRightStickSend() {
-	p.log("Was sent right stick")
-
-	p.rightStick = Clean
-
-	if p.leftStick == Clean {
-		p.dine()
-	}
-
-	if p.leftStick == None {
-		p.log("Requesting left stick")
-		p.leftStick = Waiting
-		p.leftPhilosopher.send(RightStickRequest)
-	}
+func (p *Philosopher) sendRight() {
+	p.log("Sending right stick")
+	p.rightPhilosopher.send(LeftStickSend)
+	p.rightStick = None
 }
 
-func (p *Philosopher) handleLeftStickSend() {
-	p.log("Was sent left stick")
-
-	p.leftStick = Clean
-
-	if p.rightStick == Clean {
-		p.dine()
-	}
-
-	if p.rightStick == None {
-		p.log("Requesting right stick")
-		p.rightStick = Waiting
-		p.rightPhilosopher.send(LeftStickRequest)
-	}
+func (p *Philosopher) sendLeft() {
+	p.log("Sending left stick")
+	p.leftPhilosopher.send(RightStickSend)
+	p.leftStick = None
 }
 
-func (p *Philosopher) handleStart() {
-	if p.leftStick == None {
-		p.log("Requesting left stick")
-		p.leftPhilosopher.send(RightStickRequest)
-		p.leftStick = Waiting
-	}
-
-	if p.rightStick == None {
-		p.log("Requesting right stick")
-		p.rightPhilosopher.send(LeftStickRequest)
-		p.rightStick = Waiting
-	}
-}
-
-func (p *Philosopher) dine() {
-	fmt.Println("Dining!")
-
-	p.leftStick = Dirty
-	p.rightStick = Dirty
-
-	if p.leftStickRequested {
-		p.leftStick = None
-		p.leftPhilosopher.send(RightStickSend)
-	}
-
-	if p.rightStickRequested {
-		p.rightStick = None
-		p.rightPhilosopher.send(LeftStickSend)
-	}
-
-	p.leftStickRequested = false
-	p.rightStickRequested = false
-
-	p.send(Start)
+func (p Philosopher) send(msg Message) {
+	p.channel <- msg
 }
 
 func (p *Philosopher) log(msg string) {
 	fmt.Printf("Philosopher %v: %v\n", p.id, msg)
 }
 
-func (p Philosopher) send(msg Message) {
-	p.channel <- msg
+func (p Philosopher) receive() {
+	for msg := range p.channel {
+		switch msg {
+		case Start:
+			p.start()
+		case RightStickRequest:
+			p.rightStickRequest()
+		case LeftStickRequest:
+			p.leftStickRequest()
+		case RightStickSend:
+			p.rightStickSend()
+		case LeftStickSend:
+			p.leftStickSend()
+		}
+	}
+}
+
+func (p *Philosopher) start() {
+	if p.leftStick == None {
+		p.requestLeft()
+	}
+
+	if p.rightStick == None {
+		p.requestRight()
+	}
+}
+
+func (p *Philosopher) rightStickSend() {
+	p.rightStick = Clean
+
+	if p.leftStick == Clean {
+		p.dine()
+	} else if p.leftStick == None {
+		p.requestLeft()
+	}
+}
+
+func (p *Philosopher) leftStickSend() {
+
+	p.leftStick = Clean
+
+	if p.rightStick == Clean {
+		p.dine()
+	} else if p.rightStick == None {
+		p.requestRight()
+	}
+}
+
+func (p *Philosopher) dine() {
+	fmt.Println("Dining!")
+	// time.Sleep(500 * time.Millisecond)
+
+	p.clean_up()
+}
+
+func (p *Philosopher) clean_up() {
+	p.leftStick = Dirty
+	p.rightStick = Dirty
+
+	if p.leftStickRequested {
+		p.sendLeft()
+		p.requestLeft()
+		p.leftStickRequested = false
+	}
+
+	if p.rightStickRequested {
+		p.sendRight()
+		p.requestRight()
+		p.rightStickRequested = false
+	}
+}
+
+func (p *Philosopher) rightStickRequest() {
+	if p.rightStick == Dirty {
+		p.sendRight()
+		p.requestRight()
+	} else {
+		p.rightStickRequested = true
+	}
+}
+
+func (p *Philosopher) leftStickRequest() {
+	if p.leftStick == Dirty {
+		p.sendLeft()
+		p.requestLeft()
+	} else {
+		p.leftStickRequested = true
+	}
 }

@@ -2,10 +2,11 @@ package main
 
 import "time"
 
-const PHILOSOPHERS = 3
+const PHILOSOPHERS = 5
 
 func main() {
-	newChain(PHILOSOPHERS)
+	chain := newChain(PHILOSOPHERS)
 
-	time.Sleep(10 * time.Second)
+	<-time.After(5 * time.Second)
+	chain.close()
 }

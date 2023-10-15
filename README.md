@@ -1,4 +1,4 @@
-# Dining Philosophers Problem
+# Dining Actors Problem
 
 Modelado y solución al problema de la cena de los filósofos usando actores, en Go. Se resuelve utilizando el algoritmo de Chandy/Misra
 

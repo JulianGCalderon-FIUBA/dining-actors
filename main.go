@@ -1,13 +1,16 @@
 package main
 
-import "time"
+import (
+	"dining-actors/philosopher"
+	"time"
+)
 
 const PHILOSOPHERS = 5
 
 func main() {
-	chain := newChain(PHILOSOPHERS)
-	chain.start()
+	chain := philosopher.NewChain(PHILOSOPHERS)
+	chain.Start()
 
 	<-time.After(5 * time.Second)
-	chain.shutdown()
+	chain.Shutdown()
 }

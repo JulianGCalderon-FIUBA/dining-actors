@@ -1,4 +1,4 @@
-package main
+package philosopher
 
 import (
 	"fmt"
@@ -18,17 +18,9 @@ func (p *Philosopher) Send(msg Message) {
 	p.channel <- msg
 }
 
-func (p *Philosopher) Prepare() {
-	if p.leftStick == None {
-		p.requestLeft()
-	}
-
-	if p.rightStick == None {
-		p.requestRight()
-	}
-}
-
 func (p Philosopher) Loop() {
+	p.prepare()
+
 	for msg := range p.channel {
 		switch msg {
 		case RightStickRequest:
@@ -46,7 +38,7 @@ func (p Philosopher) Loop() {
 /* Handlers */
 
 func (p *Philosopher) rightStickSend() {
-	p.log("Got right stick")
+	p.say("Got right stick")
 
 	p.rightStick = Clean
 
@@ -56,7 +48,7 @@ func (p *Philosopher) rightStickSend() {
 }
 
 func (p *Philosopher) leftStickSend() {
-	p.log("Got left stick")
+	p.say("Got left stick")
 
 	p.leftStick = Clean
 
@@ -80,6 +72,16 @@ func (p *Philosopher) leftStickRequest() {
 }
 
 /* Logic */
+
+func (p *Philosopher) prepare() {
+	if p.leftStick == None {
+		p.requestLeft()
+	}
+
+	if p.rightStick == None {
+		p.requestRight()
+	}
+}
 
 func (p *Philosopher) dine() {
 	p.scream("Dining!")
@@ -122,6 +124,10 @@ func (p *Philosopher) sendLeft() {
 
 func (p *Philosopher) log(msg string) {
 	fmt.Printf("Philosopher %v: %v\n", p.id, msg)
+}
+
+func (p *Philosopher) say(msg string) {
+	fmt.Printf("\033[34m"+"Philosopher %v, %v\n"+"\033[0m", p.id, msg)
 }
 
 func (p *Philosopher) scream(msg string) {

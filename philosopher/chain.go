@@ -1,8 +1,8 @@
-package main
+package philosopher
 
 type Chain []Philosopher
 
-func newChain(size int) (philosophers Chain) {
+func NewChain(size int) (philosophers Chain) {
 	philosophers = make([]Philosopher, size)
 
 	for i := range philosophers {
@@ -25,14 +25,13 @@ func newChain(size int) (philosophers Chain) {
 	return
 }
 
-func (c Chain) start() {
+func (c Chain) Start() {
 	for _, p := range c {
-		p.Prepare()
 		go p.Loop()
 	}
 }
 
-func (c Chain) shutdown() {
+func (c Chain) Shutdown() {
 	for _, p := range c {
 		p.Send(Shutdown)
 	}

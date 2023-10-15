@@ -1,4 +1,4 @@
-package philosopher
+package internal
 
 type Stick uint8
 

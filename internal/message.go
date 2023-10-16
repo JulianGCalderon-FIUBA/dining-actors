@@ -1,11 +1,12 @@
 package internal
 
-type Message uint8
+type Message interface{}
 
-const (
-	Shutdown Message = iota
-	RightStickRequest
-	RightStickSend
-	LeftStickRequest
-	LeftStickSend
-)
+type RightStickRequest struct{}
+type RightStickSend struct{}
+type LeftStickRequest struct{}
+type LeftStickSend struct{}
+
+type Shutdown struct {
+	response chan bool
+}

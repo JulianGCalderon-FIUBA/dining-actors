@@ -36,7 +36,7 @@ func (p Philosopher) Loop() {
 	p.prepare()
 
 	for msg := range p.channel {
-		switch msg {
+		switch msg := msg.(type) {
 		case RightStickRequest:
 			p.rightStickRequest()
 		case LeftStickRequest:
@@ -45,6 +45,9 @@ func (p Philosopher) Loop() {
 			p.rightStickSend()
 		case LeftStickSend:
 			p.leftStickSend()
+		case Shutdown:
+			msg.response <- true
+			return
 		}
 	}
 }
@@ -112,23 +115,23 @@ func (p *Philosopher) clean_up() {
 
 func (p *Philosopher) requestRight() {
 	p.log("Requesting right stick")
-	p.rightPhilosopher <- LeftStickRequest
+	p.rightPhilosopher <- LeftStickRequest{}
 }
 
 func (p *Philosopher) requestLeft() {
 	p.log("Requesting left stick")
-	p.leftPhilosopher <- RightStickRequest
+	p.leftPhilosopher <- RightStickRequest{}
 }
 
 func (p *Philosopher) sendRight() {
 	p.log("Sending right stick")
-	p.rightPhilosopher <- LeftStickSend
+	p.rightPhilosopher <- LeftStickSend{}
 	p.rightStick = None
 }
 
 func (p *Philosopher) sendLeft() {
 	p.log("Sending left stick")
-	p.leftPhilosopher <- RightStickSend
+	p.leftPhilosopher <- RightStickSend{}
 	p.leftStick = None
 }
 

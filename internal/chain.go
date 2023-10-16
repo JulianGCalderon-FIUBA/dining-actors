@@ -2,7 +2,7 @@ package internal
 
 type Chain []Philosopher
 
-func NewChain(size int) (philosophers Chain) {
+func MakeChain(size int) (philosophers Chain) {
 	philosophers = make([]Philosopher, size)
 
 	for id := range philosophers {

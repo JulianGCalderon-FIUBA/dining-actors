@@ -5,21 +5,18 @@ type Chain []Philosopher
 func NewChain(size int) (philosophers Chain) {
 	philosophers = make([]Philosopher, size)
 
-	for i := range philosophers {
-		philosophers[i].id = i
-		philosophers[i].channel = make(chan Message, 100)
+	for id := range philosophers {
+		p := &philosophers[id]
+		p.Init(id)
+	}
 
-		leftI := (i + size - 1) % size
-		rightI := (i + 1) % size
+	for id := range philosophers {
+		rightId := (id + 1) % size
 
-		philosophers[i].rightPhilosopher = &philosophers[rightI]
-		philosophers[i].leftPhilosopher = &philosophers[leftI]
+		p := &philosophers[id]
+		rightP := &philosophers[rightId]
 
-		if i < rightI {
-			philosophers[i].rightStick = Dirty
-		} else {
-			philosophers[rightI].leftStick = Dirty
-		}
+		Link(p, rightP)
 	}
 
 	return
@@ -33,6 +30,6 @@ func (c Chain) Start() {
 
 func (c Chain) Shutdown() {
 	for _, p := range c {
-		p.Send(Shutdown)
+		p.channel <- Shutdown
 	}
 }

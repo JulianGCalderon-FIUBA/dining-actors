@@ -5,17 +5,31 @@ import (
 	"time"
 )
 
+const CHANNEL_SIZE = 8
+
 type Philosopher struct {
 	id               int
 	leftStick        Stick
 	rightStick       Stick
-	leftPhilosopher  *Philosopher
-	rightPhilosopher *Philosopher
+	leftPhilosopher  chan Message
+	rightPhilosopher chan Message
 	channel          chan Message
 }
 
-func (p *Philosopher) Send(msg Message) {
-	p.channel <- msg
+func (p *Philosopher) Init(id int) {
+	p.id = id
+	p.channel = make(chan Message, CHANNEL_SIZE)
+}
+
+func Link(left *Philosopher, right *Philosopher) {
+	left.rightPhilosopher = right.channel
+	right.leftPhilosopher = left.channel
+
+	if left.id < right.id {
+		left.rightStick = Dirty
+	} else {
+		right.leftStick = Dirty
+	}
 }
 
 func (p Philosopher) Loop() {
@@ -35,7 +49,29 @@ func (p Philosopher) Loop() {
 	}
 }
 
-/* Handlers */
+func (p *Philosopher) prepare() {
+	if p.leftStick == None {
+		p.requestLeft()
+	}
+
+	if p.rightStick == None {
+		p.requestRight()
+	}
+}
+
+func (p *Philosopher) rightStickRequest() {
+	if p.rightStick == Dirty {
+		p.sendRight()
+		p.requestRight()
+	}
+}
+
+func (p *Philosopher) leftStickRequest() {
+	if p.leftStick == Dirty {
+		p.sendLeft()
+		p.requestLeft()
+	}
+}
 
 func (p *Philosopher) rightStickSend() {
 	p.say("Got right stick")
@@ -54,32 +90,6 @@ func (p *Philosopher) leftStickSend() {
 
 	if p.rightStick == Clean {
 		p.dine()
-	}
-}
-
-func (p *Philosopher) rightStickRequest() {
-	if p.rightStick == Dirty {
-		p.sendRight()
-		p.requestRight()
-	}
-}
-
-func (p *Philosopher) leftStickRequest() {
-	if p.leftStick == Dirty {
-		p.sendLeft()
-		p.requestLeft()
-	}
-}
-
-/* Logic */
-
-func (p *Philosopher) prepare() {
-	if p.leftStick == None {
-		p.requestLeft()
-	}
-
-	if p.rightStick == None {
-		p.requestRight()
 	}
 }
 
@@ -102,23 +112,23 @@ func (p *Philosopher) clean_up() {
 
 func (p *Philosopher) requestRight() {
 	p.log("Requesting right stick")
-	p.rightPhilosopher.Send(LeftStickRequest)
+	p.rightPhilosopher <- LeftStickRequest
 }
 
 func (p *Philosopher) requestLeft() {
 	p.log("Requesting left stick")
-	p.leftPhilosopher.Send(RightStickRequest)
+	p.leftPhilosopher <- RightStickRequest
 }
 
 func (p *Philosopher) sendRight() {
 	p.log("Sending right stick")
-	p.rightPhilosopher.Send(LeftStickSend)
+	p.rightPhilosopher <- LeftStickSend
 	p.rightStick = None
 }
 
 func (p *Philosopher) sendLeft() {
 	p.log("Sending left stick")
-	p.leftPhilosopher.Send(RightStickSend)
+	p.leftPhilosopher <- RightStickSend
 	p.leftStick = None
 }
 

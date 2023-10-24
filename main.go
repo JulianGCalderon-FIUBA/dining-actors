@@ -2,7 +2,9 @@ package main
 
 import (
 	"dining-actors/internal"
-	"time"
+	"os"
+	"os/signal"
+	"syscall"
 )
 
 const PHILOSOPHERS = 5
@@ -11,6 +13,9 @@ func main() {
 	chain := internal.MakeChain(PHILOSOPHERS)
 	chain.Start()
 
-	<-time.After(5 * time.Second)
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	<-c
+
 	chain.Shutdown()
 }

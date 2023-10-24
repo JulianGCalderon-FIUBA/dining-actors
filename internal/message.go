@@ -8,5 +8,5 @@ type LeftStickRequest struct{}
 type LeftStickSend struct{}
 
 type Shutdown struct {
-	response chan bool
+	response chan struct{}
 }

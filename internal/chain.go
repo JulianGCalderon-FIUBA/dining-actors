@@ -29,7 +29,7 @@ func (c Chain) Start() {
 }
 
 func (c Chain) Shutdown() {
-	ch := make(chan bool)
+	ch := make(chan struct{})
 	for _, p := range c {
 		p.channel <- Shutdown{ch}
 	}

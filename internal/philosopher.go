@@ -46,7 +46,7 @@ func (p Philosopher) Loop() {
 		case LeftStickSend:
 			p.leftStickSend()
 		case Shutdown:
-			msg.response <- true
+			msg.response <- struct{}{}
 			return
 		}
 	}
